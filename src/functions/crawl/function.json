@@ -1,0 +1,10 @@
+{
+  "bindings": [
+    {
+      "name": "url",
+      "type": "activityTrigger",
+      "direction": "in"
+    }
+  ],
+  "scriptFile": "../dist/crawl/index.js"
+}

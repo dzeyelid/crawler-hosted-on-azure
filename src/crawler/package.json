@@ -1,0 +1,27 @@
+{
+  "name": "crawler",
+  "version": "0.1.0",
+  "description": "",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/dzeyelid/crawler-hosted-on-azure.git"
+  },
+  "author": "Kazumi OHIRA <dzeyelid@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "cheerio": "^1.0.0-rc.3"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.18",
+    "@types/node": "^13.13.2",
+    "typescript": "^3.8.3"
+  }
+}
