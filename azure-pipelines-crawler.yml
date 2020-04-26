@@ -15,8 +15,6 @@ trigger:
     exclude:
       - src/crawler/README.md
 
-pr: none
-
 variables:
 
   vmImageName: 'ubuntu-latest'
@@ -46,7 +44,10 @@ stages:
 
     - script: |
         changes=$(git status -s ./lib | wc -l)
-        if [[ 0 < $changes ]]; then exit 1; fi
+        if [[ 0 < $changes ]]; then
+          echo 'Some changes in the lib directory have not committed.'
+          exit 1;
+        fi
       displayName: 'Check updates in lib directory'
       workingDirectory: $(System.DefaultWorkingDirectory)/$(targetDir)
 
