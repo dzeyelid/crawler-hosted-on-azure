@@ -4,6 +4,13 @@
       "name": "url",
       "type": "activityTrigger",
       "direction": "in"
+    },
+    {
+      "name": "dataStorage",
+      "type": "blob",
+      "path": "%dataLakeStorageContainerName%/{DateTime}.csv",
+      "connection": "dataLakeStorageConnectionString",
+      "direction": "out"
     }
   ],
   "scriptFile": "../dist/crawl/index.js"
