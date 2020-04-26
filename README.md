@@ -1,6 +1,4 @@
-# crawler-hosted-on-azure
-
-:construction: Under development currently
+# Crawler hosted on Azure
 
 Web crawler integrated with Slack, hosted on Azure.
 

@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "crawler": "../crawler",
-    "durable-functions": "^1.4.1"
+    "durable-functions": "^1.4.1",
+    "json2csv": "^5.0.0"
   },
   "devDependencies": {
     "@azure/functions": "^1.0.2-beta2",

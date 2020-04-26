@@ -11,11 +11,20 @@
 
 import { AzureFunction, Context } from "@azure/functions";
 import { Crawler, Page } from 'crawler';
+import { Parser } from 'json2csv';
 
 const activityFunction: AzureFunction = async function (context: Context): Promise<Page | false> {
-    // TODO: retrieve the title and the content from the specified url
+    // Retrieve the title and the content from the specified url
     const crawler = new Crawler();
     const result = await crawler.crawl(context.bindings.url);
+
+    // Convert from JSON to CSV
+    const fields = ['title', 'url', 'content'];
+    const options = { fields };
+    const parser = new Parser(options);
+    const csv = parser.parse(result);
+    context.bindings.dataStorage = csv;
+
     return result;
 };
 
