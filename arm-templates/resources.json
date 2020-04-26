@@ -183,14 +183,7 @@
   "outputs": {
     "functionSlackUrl": {
       "type": "string",
-      "value": "[concat(
-        'https://',
-        reference(resourceId('Microsoft.Web/sites', variables('functionName'))).defaultHostName,
-        '/api/',
-        parameters('functionNameToSubscribeEventFromSlack'),
-        '?code=',
-        listKeys(resourceId('Microsoft.Web/sites/functions', variables('functionName'), parameters('functionNameToSubscribeEventFromSlack')), '2019-08-01').default
-      )]"
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('functionName'))).defaultHostName, '/api/', parameters('functionNameToSubscribeEventFromSlack'), '?code=', listKeys(resourceId('Microsoft.Web/sites/functions', variables('functionName'), parameters('functionNameToSubscribeEventFromSlack')), '2019-08-01').default)]"
     }
   },
   "functions": [
