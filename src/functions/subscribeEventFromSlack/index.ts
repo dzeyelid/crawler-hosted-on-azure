@@ -4,18 +4,8 @@ import { AzureFunction, Context, HttpRequest } from "../node_modules/@azure/func
 import { Crawler } from "crawler"
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<any> {
-    context.log('HTTP trigger function processed a request.');
-    if (!validate(req)) {
-        context.log('The event is not eligible.');
-        const response: IHttpResponse = {
-            status: 200,
-            body: null
-        }
-        return response;
-    }
-
     // Respond to challenge request
-    if (req.body.hasOwnProperty('challenge')) {
+    if (isUrlVerification(req)) {
         context.log('Just respond to the verify.');
         const response: IHttpResponse = {
             status: 200,
@@ -25,6 +15,15 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         }
         return response;
     }
+
+    if (!validate(req)) {
+        context.log('The event is not eligible.');
+        const response: IHttpResponse = {
+            status: 200,
+            body: null
+        }    
+        return response;
+    }    
 
     // Extract the urls
     const { blocks } = req.body.event;
@@ -50,6 +49,13 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     }
     return response;
 };
+
+const isUrlVerification = (req: HttpRequest): boolean => {
+    if (req.body && req.body.type === 'url_verification' && req.body.hasOwnProperty('challenge')) {
+        return true;
+    }
+    return false;
+}
 
 const validate = (req:HttpRequest): boolean => {
     if (!req.body || !req.body.event) {
