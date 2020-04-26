@@ -14,7 +14,7 @@ const cheerio = require("cheerio");
 class Crawler {
     crawl(url) {
         return __awaiter(this, void 0, void 0, function* () {
-            // Get the title and the content from the specified URL.
+            // Retrive the title and the content from the specified URL.
             try {
                 const response = yield axios_1.default.get(url);
                 const $ = cheerio.load(response.data);
@@ -28,6 +28,7 @@ class Crawler {
                 return page;
             }
             catch (e) {
+                // Failed to retrive from the specified URL.
                 return false;
             }
         });
