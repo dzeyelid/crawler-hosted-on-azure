@@ -4,7 +4,7 @@ import * as cheerio from 'cheerio';
 
 class Crawler {
   async crawl(url: string): Promise<Page | false> {
-    // Get the title and the content from the specified URL.
+    // Retrive the title and the content from the specified URL.
     try {
       const response = await axios.get(url);
       const $ = cheerio.load(response.data);
@@ -18,6 +18,7 @@ class Crawler {
       };
       return page;
     } catch (e) {
+      // Failed to retrive from the specified URL.
       return false;
     }
   }
