@@ -1,0 +1,56 @@
+# Node.js Function App to Linux on Azure
+# Build a Node.js function app and deploy it to Azure as a Linux function app.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
+trigger:
+  branches:
+    include:
+      - '*'
+    exclude:
+      - master
+  paths:
+    include:
+      - src/crawler/*
+    exclude:
+      - src/crawler/README.md
+
+pr: none
+
+variables:
+
+  vmImageName: 'ubuntu-latest'
+
+  targetDir: src/crawler
+
+stages:
+- stage: Test
+  displayName: Test stage
+  jobs:
+  - job: Test
+    displayName: Test
+    pool:
+      vmImage: $(vmImageName)
+
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '12.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install
+        npm run build --if-present
+      displayName: 'Prepare binaries'
+      workingDirectory: $(System.DefaultWorkingDirectory)/$(targetDir)
+
+    - script: |
+        changes=$(git status -s ./lib | wc -l)
+        if [[ 0 < $changes ]]; then exit 1; fi
+      displayName: 'Check updates in lib directory'
+      workingDirectory: $(System.DefaultWorkingDirectory)/$(targetDir)
+
+    - script: |
+        npm run test --if-present
+      displayName: 'Run test'
+      workingDirectory: $(System.DefaultWorkingDirectory)/$(targetDir)
