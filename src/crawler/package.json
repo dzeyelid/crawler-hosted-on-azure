@@ -5,9 +5,9 @@
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -b src",
+    "watch": "tsc -b src -w",
+    "test": "tsc -b src test && jest"
   },
   "repository": {
     "type": "git",
@@ -21,7 +21,10 @@
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.18",
+    "@types/jest": "^25.2.1",
     "@types/node": "^13.13.2",
+    "jest": "^25.4.0",
+    "ts-jest": "^25.4.0",
     "typescript": "^3.8.3"
   }
 }

@@ -1,6 +1,6 @@
 import { Page } from './interfaces/page.interface';
 import axios from 'axios';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 
 class Crawler {
   async crawl(url: string): Promise<Page | false> {

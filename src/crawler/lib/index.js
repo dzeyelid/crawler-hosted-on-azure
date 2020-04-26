@@ -8,19 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
-const cheerio_1 = __importDefault(require("cheerio"));
+const axios_1 = require("axios");
+const cheerio = require("cheerio");
 class Crawler {
     crawl(url) {
         return __awaiter(this, void 0, void 0, function* () {
             // Get the title and the content from the specified URL.
             try {
                 const response = yield axios_1.default.get(url);
-                const $ = cheerio_1.default.load(response.data);
+                const $ = cheerio.load(response.data);
                 const title = $('title').text();
                 const body = $('body').text();
                 const page = {
