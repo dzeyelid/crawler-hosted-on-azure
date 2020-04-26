@@ -1,0 +1,235 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "prefix": {
+      "type": "string",
+      "maxLength": 5,
+      "metadata": {
+        "description": "String that is put at each resource name as a prefix within 5 characters"
+      }
+    },
+    "storageAccountSkuName": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS",
+        "Premium_ZRS",
+        "Standard_GZRS",
+        "Standard_RAGZRS"
+      ]
+    },
+    "dataContainerName": {
+      "type": "string",
+      "defaultValue": "data",
+      "metadata": {
+        "description": "Container name of Azure Data Lake Storage, that store data"
+      }
+    },
+    "functionsZipPackageUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/dzeyelid/crawler-hosted-on-azure/raw/master/arm-templates/function-packages/functions.zip"
+    },
+    "functionNameToSubscribeEventFromSlack": {
+      "type": "string",
+      "defaultValue": "subscribeEventFromSlack"
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "storageAccountNameForFunction": "[resources.createStorageAccountName(parameters('prefix'), 'func')]",
+    "storageAccountNameForDataLake": "[resources.createStorageAccountName(parameters('prefix'), 'lake')]",
+    "functionName": "[resources.createName(parameters('prefix'), 'func')]",
+    "appServicePlanName": "[resources.createName(parameters('prefix'), 'plan')]",
+    "appInsightsName": "[resources.createName(parameters('prefix'), 'insights')]"
+  },
+  "resources": [
+        {
+      "name": "[variables('storageAccountNameForDataLake')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-06-01",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "[parameters('storageAccountSkuName')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "isHnsEnabled": true
+      },
+      "resources": [
+        {
+          "name": "default",
+          "type": "blobServices",
+          "apiVersion": "2019-06-01",
+          "properties": {
+          },
+          "resources": [
+            {
+              "name": "[parameters('dataContainerName')]",
+              "type": "containers",
+              "apiVersion": "2019-06-01",
+              "properties": {
+                "publicAccess": "Container"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('storageAccountNameForDataLake'), 'default')]"
+              ]
+            }
+          ],
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountNameForDataLake'))]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "[variables('storageAccountNameForFunction')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-06-01",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "[parameters('storageAccountSkuName')]"
+      },
+      "kind": "StorageV2",
+      "properties": {}
+    },
+    {
+      "name": "[variables('appServicePlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2019-08-01",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Y1",
+        "tier": "Dynamic"
+      },
+      "properties": {
+        "name": "[variables('appServicePlanName')]"
+      }
+    },
+    {
+      "name": "[variables('appInsightsName')]",
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2015-05-01",
+      "location": "[variables('location')]",
+      "kind": "web",
+      "tags": {
+        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('functionName'))]": "Resource"
+      },
+      "properties": {
+        "Application_Type": "web",
+        "ApplicationId": "[variables('appInsightsName')]"
+      }
+    },
+    {
+      "name": "[variables('functionName')]",
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2019-08-01",
+      "location": "[variables('location')]",
+      "kind": "functionapp",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountNameForFunction'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountNameForDataLake'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "AzureWebJobsDashboard",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountNameForFunction'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountNameForFunction')),'2019-06-01').keys[0].value)]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountNameForFunction'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountNameForFunction')),'2019-06-01').keys[0].value)]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~2"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('microsoft.insights/components/', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "node"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~12"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "[parameters('functionsZipPackageUrl')]"
+            },
+            {
+              "name": "dataLakeStorageConnectionString",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountNameForDataLake'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountNameForDataLake')),'2019-06-01').keys[0].value)]"
+            },
+            {
+              "name": "dataLakeStorageContainerName",
+              "value": "[parameters('dataContainerName')]"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "functionSlackUrl": {
+      "type": "string",
+      "value": "[concat(
+        'https://',
+        reference(resourceId('Microsoft.Web/sites', variables('functionName'))).defaultHostName,
+        '/api/',
+        parameters('functionNameToSubscribeEventFromSlack'),
+        '?code=',
+        listKeys(resourceId('Microsoft.Web/sites/functions', variables('functionName'), parameters('functionNameToSubscribeEventFromSlack')), '2019-08-01').default
+      )]"
+    }
+  },
+  "functions": [
+    {
+      "namespace": "resources",
+      "members": {
+        "createName": {
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "string"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "output": {
+            "type": "string",
+            "value": "[concat(parameters('prefix'), '-', parameters('name'))]"
+          }
+        },
+        "createStorageAccountName": {
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "string"
+            },
+            {
+              "name": "suffix",
+              "type": "string"
+            }
+          ],
+          "output": {
+            "type": "string",
+            "value": "[concat(parameters('prefix'), uniqueString(resourceGroup().id), parameters('suffix'))]"
+          }
+        }
+      }
+    }
+  ]
+}
