@@ -15,6 +15,8 @@ trigger:
     exclude:
       - src/crawler/README.md
 
+pr: none
+
 variables:
 
   vmImageName: 'ubuntu-latest'
