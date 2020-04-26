@@ -1,0 +1,110 @@
+# Node.js Function App to Linux on Azure
+# Build a Node.js function app and deploy it to Azure as a Linux function app.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
+trigger:
+  branches:
+    include:
+      - '*'
+    exclude:
+      - master
+  paths:
+    include:
+      - src/functions/*
+    exclude:
+      - src/functions/README.md
+
+pr: none
+
+variables:
+
+  vmImageName: 'ubuntu-latest'
+  pipelineArtifacts: 'drop'
+
+  targetDir: src/functions
+
+  sshPrivateKeyFileName: 'id_rsa-devops'
+
+  functionsPackagesDir: 'arm-templates/function-packages'
+  functionsPackageName: 'functions.zip'
+
+  gitHubUrl: git@github.com:dzeyelid/crawler-hosted-on-azure.git
+  repositoryDir: crawler-hosted-on-azure
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '12.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        if [ -f extensions.csproj ]
+        then
+            dotnet build extensions.csproj --runtime ubuntu.16.04-x64 --output ./bin
+        fi
+      displayName: 'Build extensions'
+      workingDirectory: $(System.DefaultWorkingDirectory)/$(targetDir)
+
+    - script: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      displayName: 'Prepare binaries'
+      workingDirectory: $(System.DefaultWorkingDirectory)/$(targetDir)
+
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: $(System.DefaultWorkingDirectory)/$(targetDir)
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      artifact: $(pipelineArtifacts)
+
+  - job: Push
+    displayName: Push
+    pool:
+      vmImage: $(vmImageName)
+
+    steps:
+    - download: current
+      artifact: $(pipelineArtifacts)
+
+    - task: InstallSSHKey@0
+      inputs:
+        knownHostsEntry: 'github.com'
+        sshPublicKey: $(sshPublicKey)
+        sshKeySecureFile: $(sshPrivateKeyFileName)
+
+    - script: |
+        git clone $(gitHubUrl)
+        cd $(repositoryDir)
+        git config user.name "$(gitHubConfigUserName)"
+        git config user.email "$(gitHubConfigUserEmail)"
+        git switch -c $(Build.SourceBranchName) --track origin/$(Build.SourceBranchName)
+      displayName: Clone the repository to push later
+      workingDirectory: $(Pipeline.Workspace)
+
+    - script: |
+        mv $(Pipeline.Workspace)/$(pipelineArtifacts)/$(Build.BuildId).zip $(Pipeline.Workspace)/$(repositoryDir)/$(functionsPackagesDir)/$(functionsPackageName)
+      displayName: Move the package file to under repository
+
+    - script: |
+        git add $(functionsPackagesDir)/$(functionsPackageName)
+        git commit -m "Update the function package"
+        git push origin $(Build.SourceBranchName)
+      displayName: Push zip archive to the branch
+      workingDirectory: $(Pipeline.Workspace)/$(repositoryDir)
