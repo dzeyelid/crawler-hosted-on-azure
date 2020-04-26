@@ -75,6 +75,7 @@ stages:
       artifact: $(pipelineArtifacts)
 
   - job: Push
+    dependsOn: Build
     displayName: Push
     pool:
       vmImage: $(vmImageName)
