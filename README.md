@@ -97,3 +97,11 @@ On Windows, when run the functions first, you may need to allow access.
 ## Refrences
 
 - [Using the Slack Events API | Slack](https://api.slack.com/events-api)
+
+## License
+
+- [MIT License](./LICENSE)
+
+© 2020 Kazumi OHIRA All rights reserved.
+
+本コンテンツの著作権、および本コンテンツ中に出てくる商標権、団体名、ロゴ、製品、サービスなどはそれぞれ、各権利保有者に帰属します。
